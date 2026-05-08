@@ -13,13 +13,13 @@
 }:
 let
   pname = "zeroclaw";
-  version = "0.7.4";
+  version = "0.7.5";
 
   src = fetchFromGitHub {
     owner = "zeroclaw-labs";
     repo = "zeroclaw";
     tag = "v${version}";
-    hash = "sha256-kLgSgwZnxmppzbAHQobs20RZF0qnpgvPY56Nc54s/S0=";
+    hash = "sha256-hVHfsBw3u0CLWAbmizLA9ZrB+3B0qBIrSUuzsyChwW0=";
   };
 
   frontendSrc = runCommand "${pname}-web-src-${version}" { } ''
@@ -42,10 +42,21 @@ let
     npmDeps = fetchNpmDeps {
       src = frontendSrc;
       name = "${pname}-${version}-npm-deps";
-      hash = "sha256-d4vuO7StGp9F75ASvtD+zZ7I0io/sZFoJtRLQpfodiY=";
+      hash = "sha256-k5RJkLXMRk8HXG8Qju3Pprd65kySHRQEpeNJbvgwndQ=";
       fetcherVersion = 2;
     };
     makeCacheWritable = true;
+
+    # `api-generated.ts` is normally produced by `cargo web gen-api`, which
+    # renders the gateway's OpenAPI spec and pipes it through openapi-typescript.
+    # It is only re-exported as a type from api.ts and never consumed elsewhere,
+    # so stub it instead of pulling the whole Rust toolchain into the frontend.
+    postPatch = ''
+      cat > src/lib/api-generated.ts <<'EOF'
+      export type paths = Record<string, unknown>;
+      export type components = Record<string, unknown>;
+      EOF
+    '';
 
     buildPhase = ''
       runHook preBuild
@@ -64,7 +75,7 @@ in
 rustPlatform.buildRustPackage rec {
   inherit pname version src;
 
-  cargoHash = "sha256-kDvsiVg5WUcc13HwNhYkcBJLWNUFXdA3J7EGbRL0JBY=";
+  cargoHash = "sha256-6MGIJsaqRp3k/ysjdu6BE2iM2sehERQR+QoSqiThSpg=";
 
   preBuild = ''
     mkdir -p web/dist
