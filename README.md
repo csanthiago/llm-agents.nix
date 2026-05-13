@@ -687,6 +687,16 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 </details>
 <details>
+<summary><strong>herdr</strong> - Terminal workspace manager for AI coding agents</summary>
+
+- **Source**: unknown
+- **License**: AGPL-3.0-or-later
+- **Homepage**: https://herdr.dev
+- **Usage**: `nix run github:numtide/llm-agents.nix#herdr -- --help`
+- **Nix**: [packages/herdr/package.nix](packages/herdr/package.nix)
+
+</details>
+<details>
 <summary><strong>openspec</strong> - Spec-driven development for AI coding assistants</summary>
 
 - **Source**: bytecode
@@ -920,16 +930,6 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 - **Homepage**: https://github.com/slopus/happy
 - **Usage**: `nix run github:numtide/llm-agents.nix#happy-coder -- --help`
 - **Nix**: [packages/happy-coder/package.nix](packages/happy-coder/package.nix)
-
-</details>
-<details>
-<summary><strong>herdr</strong> - Terminal workspace manager for AI coding agents</summary>
-
-- **Source**: binary
-- **License**: AGPL-3.0-or-later
-- **Homepage**: https://herdr.dev
-- **Usage**: `nix run github:numtide/llm-agents.nix#herdr -- --help`
-- **Nix**: [packages/herdr/package.nix](packages/herdr/package.nix)
 
 </details>
 <details>
