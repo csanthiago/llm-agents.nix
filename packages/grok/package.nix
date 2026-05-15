@@ -25,6 +25,17 @@ let
   platform = stdenv.hostPlatform.system;
   platformSuffix = platformMap.${platform} or (throw "Unsupported system: ${platform}");
 
+  # Grok's run_command tool spawns shells via portable_pty, which execve's
+  # absolute paths like /bin/bash and /bin/zsh (derived from $SHELL, with
+  # /bin/bash as the hardcoded fallback). NixOS only ships /bin/sh, so every
+  # shell tool call fails with `Terminal error: IO Error: No such file or
+  # directory (os error 2)` before any user command runs.
+  #
+  # As a transitional workaround, wrap the Linux entry points with bubblewrap
+  # so /bin is replaced by a tmpfs containing symlinks to the matching shells
+  # from the Nix store. This wrapping should become unnecessary once upstream
+  # grok honors $SHELL (or PATH) instead of fixed /bin/* paths. Tracked in
+  # https://github.com/numtide/llm-agents.nix/issues/4912.
   bwrapFlags = lib.concatStringsSep " " [
     "--dev-bind / /"
     "--tmpfs /bin"
