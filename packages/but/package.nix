@@ -14,13 +14,13 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "but";
-  version = "0.19.11";
+  version = "0.19.12";
 
   src = fetchFromGitHub {
     owner = "gitbutlerapp";
     repo = "gitbutler";
     tag = "release/${finalAttrs.version}";
-    hash = "sha256-43XtLd8WMt8ty2R1Tcu5++zP40nkKs9qa2GJKo+7t2A=";
+    hash = "sha256-MIrr/HeUIHdf8DtMMjEsZI6ZdDsZochBWanddncEa+o=";
   };
 
   cargoHash = "sha256-CxjZeIzrQuRXGc6FKt3dDhsR7MwO1un75A7D5GqVdCI=";
