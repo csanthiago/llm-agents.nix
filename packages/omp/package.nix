@@ -12,6 +12,7 @@
   autoPatchelfHook,
   zlib,
   libclang,
+  python3,
   zig,
 }:
 
@@ -100,6 +101,40 @@ stdenv.mkDerivation {
   bunDeps = bun2nix.fetchBunDeps {
     bunNix = ./bun.nix;
   };
+
+  # Remove robomp-web workspace so bun doesn't try to resolve its
+  # devDependencies (vite, tailwindcss, etc.) which aren't needed for the CLI.
+  postUnpack = ''
+        rm -rf $sourceRoot/python/robomp/web
+        ROOT="$sourceRoot" ${lib.getExe python3} -c "
+    import json, re, os
+    root = os.environ['ROOT']
+
+    with open(f'{root}/package.json') as f:
+        pkg = json.load(f)
+    ws = pkg.get('workspaces', {})
+    if isinstance(ws, dict) and 'packages' in ws:
+        ws['packages'] = [w for w in ws['packages'] if 'robomp/web' not in w]
+    elif isinstance(ws, list):
+        pkg['workspaces'] = [w for w in ws if 'robomp/web' not in w]
+    with open(f'{root}/package.json', 'w') as f:
+        json.dump(pkg, f, indent=2)
+        f.write('\\n')
+
+    # bun.lock uses trailing commas (JSONC), strip them for stdlib json
+    with open(f'{root}/bun.lock') as f:
+        text = re.sub(r',\s*([}\]])', r'\1', f.read())
+    lock = json.loads(text)
+    lock.get('workspaces', {}).pop('python/robomp/web', None)
+    lock.get('packages', {}).pop('robomp-web', None)
+    for k in list(lock.get('packages', {})):
+        if k.startswith('robomp-web/'):
+            del lock['packages'][k]
+    with open(f'{root}/bun.lock', 'w') as f:
+        json.dump(lock, f, indent=2)
+        f.write('\\n')
+    "
+  '';
 
   # We handle build and install ourselves
   dontUseBunBuild = true;
