@@ -17,23 +17,29 @@
 
 let
   pnpm = pnpm_10;
+  # pnpm 10.33+ rejects patchedDependencies mismatch between lockfile
+  # and pnpm-workspace.yaml; strip from both for frozen install.
+  stripPatchedDeps = ''
+    sed -i '/^patchedDependencies:/,/^[^ ]/{/^patchedDependencies:/d;/^  /d;}' pnpm-lock.yaml pnpm-workspace.yaml
+  '';
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "openclaw";
-  version = "2026.5.7";
+  version = "2026.5.12";
 
   src = fetchFromGitHub {
     owner = "openclaw";
     repo = "openclaw";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-ICkq6YfMJVvRC93sM+7/q2JI82wUhjaYAI3pRzmTHYc=";
+    hash = "sha256-URuoljISNcDLuWUwOpZoFjPNVOmbThC9r00uShPR4Co=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     inherit pnpm;
-    hash = "sha256-JXfo1vb5wVbMwBM1DogKxz2/thCXOV82dhrPq/xklc4=";
+    hash = "sha256-EhF4daLXduTw/l0z08IdXkrQAX+YZwrEbemxuscXFkk=";
     fetcherVersion = 2;
+    prePnpmInstall = stripPatchedDeps;
   };
 
   nativeBuildInputs = [
@@ -48,6 +54,8 @@ stdenv.mkDerivation (finalAttrs: {
   # Prevent cmake from automatically running in configure phase
   # (it's only needed for npm postinstall scripts)
   dontUseCmakeConfigure = true;
+
+  postPatch = stripPatchedDeps;
 
   preBuild = ''
     # rolldown is a transitive dependency (via tsdown), not a direct root
