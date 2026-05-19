@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchurl,
-  wrapBuddy,
+  autoPatchelfHook,
   versionCheckHook,
   versionCheckHomeHook,
 }:
@@ -22,7 +22,13 @@ stdenv.mkDerivation {
     hash = hashes.${platform} or (throw "Unsupported system: ${platform}");
   };
 
-  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ wrapBuddy ];
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
+
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    (lib.getLib stdenv.cc.cc)
+  ];
+
+  dontStrip = true;
 
   sourceRoot = ".";
 
