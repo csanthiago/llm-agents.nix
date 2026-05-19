@@ -80,6 +80,7 @@ python3.pkgs.buildPythonApplication rec {
     pydantic-settings
     pyfiglet
     python-dotenv
+    python-frontmatter
     pyyaml
     reportlab
     rich
