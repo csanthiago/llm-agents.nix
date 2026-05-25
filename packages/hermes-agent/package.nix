@@ -297,6 +297,7 @@ python3.pkgs.buildPythonApplication {
 
   pythonRelaxDeps = [
     "openai"
+    "python-dotenv"
     "tenacity"
     "ruamel.yaml"
     "requests"
