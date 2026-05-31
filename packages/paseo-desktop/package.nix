@@ -1,154 +1,195 @@
+# Vendored from upstream's own from-source nix expression:
+#   https://github.com/getpaseo/paseo/blob/v0.1.85/nix/desktop-package.nix
+#
+# Adaptations for this repo:
+#   - src: fetchFromGitHub of the release tag instead of `cleanSourceWith ./..`
+#     (the source filter is unnecessary for a fetched tarball).
+#   - version: pinned explicitly (upstream reads ../package.json at eval time).
+#   - npmDeps: built from npmDepsHash with npmDepsFetcherVersion = 2 (repo
+#     convention) instead of reusing the daemon package's FOD.
+#   - electron: pinned to electron_41 to match upstream's devDependency (41.x).
+#   - meta/passthru: this repo's maintainer and category conventions.
+#   - installPhase: instead of copying the whole monorepo (packages/ +
+#     node_modules/, ~1.3 GB with all devDependencies), reuse upstream's
+#     @vercel/nft runtime tracer (scripts/trace-daemon.mjs, also used by their
+#     daemon package) plus a supplemental trace of the Electron entry points
+#     to ship only the files loaded at runtime.
+#   - node-pty: delete the bundled manylinux prebuilds before `npm rebuild` so
+#     node-gyp-build actually compiles it against nix libraries. The prebuilt
+#     pty.node has no rpath and needs a system libstdc++.so.6, which fails to
+#     dlopen on NixOS and silently breaks the terminal feature.
 {
   lib,
-  flake,
   stdenv,
-  fetchurl,
-  appimageTools,
-  autoPatchelfHook,
+  flake,
+  buildNpmPackage,
+  fetchFromGitHub,
+  nodejs_22,
+  python3,
   makeWrapper,
-  alsa-lib,
-  at-spi2-atk,
-  at-spi2-core,
-  atk,
-  cairo,
-  cups,
-  dbus,
-  dbus-glib,
-  expat,
-  glib,
-  gsettings-desktop-schemas,
-  hicolor-icon-theme,
-  gtk2,
-  gtk3,
-  libgbm,
-  libglvnd,
-  libdbusmenu,
-  libdbusmenu-gtk2,
-  libX11,
-  libxcb,
-  libXcomposite,
-  libXdamage,
-  libXext,
-  libXfixes,
-  libxkbcommon,
-  libXrandr,
-  nspr,
-  nss,
-  pango,
-  udev,
+  copyDesktopItems,
+  makeDesktopItem,
+  electron_41,
+  libuv,
 }:
 
-let
+buildNpmPackage (finalAttrs: {
   pname = "paseo-desktop";
   version = "0.1.85";
 
-  src = fetchurl {
-    url = "https://github.com/getpaseo/paseo/releases/download/v${version}/Paseo-${version}-x86_64.AppImage";
-    hash = "sha256-j+cTxUl4oty9bCTH/gfT0PqBOkWeLvICmAKmHCfWTTs=";
+  src = fetchFromGitHub {
+    owner = "getpaseo";
+    repo = "paseo";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-59jPq+s5kjP2Z3DuEu6Frrz2udZlyW9PML0/PF/VeYc=";
   };
 
-  appimageContents = appimageTools.extractType2 {
-    inherit pname version src;
-  };
-in
-stdenv.mkDerivation {
-  inherit pname version src;
+  nodejs = nodejs_22;
+
+  npmDepsHash = "sha256-JyfAKinx+A8FkApfAysVMJRTwfBzCtTWibItaWTrB3E=";
+  npmDepsFetcherVersion = 2;
+
+  # Prevent onnxruntime-node's install script from running during automatic
+  # npm rebuild. We manually rebuild only node-pty in buildPhase.
+  npmRebuildFlags = [ "--ignore-scripts" ];
 
   nativeBuildInputs = [
-    autoPatchelfHook
+    python3 # for node-gyp (node-pty)
     makeWrapper
+    copyDesktopItems
   ];
 
-  buildInputs = [
-    alsa-lib
-    at-spi2-atk
-    at-spi2-core
-    atk
-    cairo
-    cups
-    dbus
-    dbus-glib
-    expat
-    glib
-    gsettings-desktop-schemas
-    hicolor-icon-theme
-    gtk2
-    gtk3
-    libgbm
-    libglvnd
-    libdbusmenu
-    libdbusmenu-gtk2
-    libX11
-    libxcb
-    libXcomposite
-    libXdamage
-    libXext
-    libXfixes
-    libxkbcommon
-    libXrandr
-    nspr
-    nss
-    pango
-    stdenv.cc.cc.lib
-    udev
-  ];
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [ libuv ];
 
-  autoPatchelfIgnoreMissingDeps = [
-    "libvips-cpp.so.8.17.3"
-  ];
+  dontNpmBuild = true;
 
-  runtimeDependencies = [
-    libgbm
-    libglvnd
-  ];
+  env = {
+    EXPO_NO_TELEMETRY = "1";
+    # Expo's web build pulls in some pre-bundled assets; ensure it doesn't try
+    # to phone home during the build.
+    CI = "1";
+  };
 
-  dontUnpack = true;
+  buildPhase = ''
+    runHook preBuild
+
+    # Native deps (terminal emulation; libuv-linked on Linux).
+    # node-gyp-build skips compilation when a matching prebuilt binary exists,
+    # so remove the bundled prebuilds first to force a real build.
+    rm -rf node_modules/node-pty/prebuilds
+    npm rebuild node-pty
+
+    # Server workspaces (highlight + relay + protocol + client + server + cli)
+    npm run build:server
+
+    # App workspace deps not covered by build:server
+    npm run build --workspace=@getpaseo/expo-two-way-audio
+
+    # Expo web export for the Electron renderer
+    ( cd packages/app && PASEO_WEB_PLATFORM=electron npx expo export --platform web )
+
+    # Desktop main process (tsc only — NOT electron-builder)
+    npm run build:main --workspace=@getpaseo/desktop
+
+    runHook postBuild
+  '';
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/lib/paseo-desktop $out/bin $out/share/applications
-    cp -R ${appimageContents}/. $out/lib/paseo-desktop/
-    chmod -R u+w $out/lib/paseo-desktop
+    mkdir -p $out/share/paseo-desktop $out/bin
 
-    rm -rf \
-      $out/lib/paseo-desktop/resources/app.asar.unpacked/node_modules/koffi/build/koffi/freebsd_* \
-      $out/lib/paseo-desktop/resources/app.asar.unpacked/node_modules/koffi/build/koffi/musl_* \
-      $out/lib/paseo-desktop/resources/app.asar.unpacked/node_modules/koffi/build/koffi/openbsd_* \
-      $out/lib/paseo-desktop/resources/app.asar.unpacked/node_modules/@mariozechner/clipboard-linux-x64-musl
+    # Compute the runtime file closure:
+    #  - upstream's tracer covers the daemon + CLI (spawned by the desktop
+    #    app's daemon-manager via @getpaseo/server and @getpaseo/cli);
+    #  - a supplemental @vercel/nft trace covers the Electron main/preload
+    #    entry points and the CLI passthrough module (dist/run.js) that the
+    #    desktop app imports at runtime.
+    node scripts/trace-daemon.mjs > runtime-files.txt
+    node --input-type=module -e '
+      import { nodeFileTrace } from "@vercel/nft";
+      const { fileList } = await nodeFileTrace(
+        [
+          "packages/desktop/dist/main.js",
+          "packages/desktop/dist/preload.js",
+          "node_modules/@getpaseo/cli/dist/run.js",
+        ],
+        {
+          base: process.cwd(),
+          ignore: ["**/*.test.js", "**/*.e2e.test.js"],
+        },
+      );
+      for (const f of [...fileList].sort()) console.log(f);
+    ' >> runtime-files.txt
 
-    makeWrapper $out/lib/paseo-desktop/Paseo $out/bin/paseo-desktop \
-      --chdir $out/lib/paseo-desktop \
-      --prefix LD_LIBRARY_PATH : ${
-        lib.makeLibraryPath [
-          libgbm
-          libglvnd
-        ]
-      } \
-      --set GSETTINGS_SCHEMA_DIR ${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}/glib-2.0/schemas \
-      --prefix XDG_DATA_DIRS : ${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}:${gtk3}/share/gsettings-schemas/${gtk3.name}:${hicolor-icon-theme}/share:$out/share \
-      --add-flags --no-sandbox
+    # Files read via fs APIs rather than require(): the pre-exported Expo web
+    # renderer (served through the paseo:// protocol handler), desktop assets
+    # (window icons), and the agent skills directory.
+    {
+      find packages/app/dist -type f
+      echo packages/app/package.json
+      find packages/desktop/assets -type f
+      echo packages/desktop/package.json
+      # node-pty's compiled addon: loaded via a runtime-computed path that
+      # static tracing cannot follow (build/Release is checked first).
+      find node_modules/node-pty/build/Release -maxdepth 1 -type f
+      if [ -d skills ]; then find skills -type f; fi
+      # Root package.json lets node resolve the workspace layout.
+      echo package.json
+    } >> runtime-files.txt
 
-    cp -R $out/lib/paseo-desktop/usr/share/icons $out/share/
-    install -Dm644 $out/lib/paseo-desktop/Paseo.desktop \
-      $out/share/applications/paseo-desktop.desktop
-    substituteInPlace $out/share/applications/paseo-desktop.desktop \
-      --replace-fail 'Exec=AppRun --no-sandbox %U' 'Exec=paseo-desktop %U' \
-      --replace-fail 'Icon=Paseo' 'Icon=Paseo'
+    # Materialize the traced closure, preserving directory structure and the
+    # node_modules/@getpaseo/* workspace symlinks (tar archives symlinks
+    # as-is, which node's module resolution requires).
+    sort -u runtime-files.txt | tar cf - --no-recursion -T - \
+      | tar xf - -C $out/share/paseo-desktop
+
+    # Hicolor icon for desktop environments
+    install -Dm644 packages/desktop/assets/icon.png \
+      $out/share/icons/hicolor/512x512/apps/paseo-desktop.png
+
+    # Launcher wraps nixpkgs electron.
+    # --no-sandbox: Chromium's setuid sandbox can't live in /nix/store
+    # (immutable, no setuid).
+    #
+    # EXPO_DEV_URL: We run unpackaged via `electron path/to/main.js`, so
+    # `app.isPackaged` is false. In that mode main.ts loads `DEV_SERVER_URL`
+    # (defaults to http://localhost:8081 — the Expo dev server, which doesn't
+    # exist here). Point it at the `paseo://` protocol handler instead, which
+    # serves from `__dirname/../../app/dist` (our install layout matches).
+    makeWrapper ${electron_41}/bin/electron $out/bin/paseo-desktop \
+      --add-flags "$out/share/paseo-desktop/packages/desktop/dist/main.js" \
+      --add-flags "--no-sandbox" \
+      --set EXPO_DEV_URL "paseo://app/"
+
+    copyDesktopItems
 
     runHook postInstall
   '';
 
+  desktopItems = [
+    (makeDesktopItem {
+      name = "paseo-desktop";
+      desktopName = "Paseo";
+      genericName = "AI Coding Agents";
+      comment = "Self-hosted daemon for AI coding agents";
+      exec = "paseo-desktop";
+      icon = "paseo-desktop";
+      categories = [ "Development" ];
+      startupWMClass = "Paseo";
+    })
+  ];
+
   passthru.category = "Workflow & Project Management";
 
-  meta = with lib; {
+  meta = {
     description = "Voice-controlled desktop development environment for AI coding agents";
     homepage = "https://paseo.sh";
-    changelog = "https://github.com/getpaseo/paseo/releases/tag/v${version}";
-    license = licenses.agpl3Plus;
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    changelog = "https://github.com/getpaseo/paseo/releases/tag/v${finalAttrs.version}";
+    license = lib.licenses.agpl3Plus;
+    sourceProvenance = [ lib.sourceTypes.fromSource ];
     maintainers = with flake.lib.maintainers; [ smdex ];
-    platforms = [ "x86_64-linux" ];
     mainProgram = "paseo-desktop";
+    platforms = lib.platforms.linux;
   };
-}
+})
