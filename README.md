@@ -235,7 +235,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: MIT
-- **Homepage**: https://github.com/Mote-Software/nanocoder
+- **Homepage**: https://github.com/Nano-Collective/nanocoder
 - **Usage**: `nix run github:numtide/llm-agents.nix#nanocoder -- --help`
 - **Nix**: [packages/nanocoder/package.nix](packages/nanocoder/package.nix)
 
