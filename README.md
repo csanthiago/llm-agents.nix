@@ -120,14 +120,14 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 </details>
 <details>
-<summary><strong>forge</strong> - AI-Enhanced Terminal Development Environment - A comprehensive coding agent that integrates AI capabilities with your development environment</summary>
+<summary><strong>forgecode</strong> - AI-Enhanced Terminal Development Environment - A comprehensive coding agent that integrates AI capabilities with your development environment</summary>
 
 - **Source**: binary
 - **License**: MIT
-- **Homepage**: https://github.com/antinomyhq/forge
-- **Usage**: `nix run github:numtide/llm-agents.nix#forge -- --help`
-- **Nix**: [packages/forge/package.nix](packages/forge/package.nix)
-- **Documentation**: See [packages/forge/README.md](packages/forge/README.md) for detailed usage
+- **Homepage**: https://github.com/tailcallhq/forgecode
+- **Usage**: `nix run github:numtide/llm-agents.nix#forgecode -- --help`
+- **Nix**: [packages/forgecode/package.nix](packages/forgecode/package.nix)
+- **Documentation**: See [packages/forgecode/README.md](packages/forgecode/README.md) for detailed usage
 
 </details>
 <details>
@@ -235,7 +235,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: MIT
-- **Homepage**: https://github.com/Mote-Software/nanocoder
+- **Homepage**: https://github.com/Nano-Collective/nanocoder
 - **Usage**: `nix run github:numtide/llm-agents.nix#nanocoder -- --help`
 - **Nix**: [packages/nanocoder/package.nix](packages/nanocoder/package.nix)
 
@@ -427,13 +427,13 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 ### Claude Code Ecosystem
 
 <details>
-<summary><strong>auto-claude</strong> - Autonomous multi-agent coding framework powered by Claude AI</summary>
+<summary><strong>aperant</strong> - Autonomous multi-agent coding framework powered by Claude AI</summary>
 
 - **Source**: source
 - **License**: AGPL-3.0-only
-- **Homepage**: https://github.com/AndyMik90/Auto-Claude
-- **Usage**: `nix run github:numtide/llm-agents.nix#auto-claude -- --help`
-- **Nix**: [packages/auto-claude/package.nix](packages/auto-claude/package.nix)
+- **Homepage**: https://github.com/AndyMik90/Aperant
+- **Usage**: `nix run github:numtide/llm-agents.nix#aperant -- --help`
+- **Nix**: [packages/aperant/package.nix](packages/aperant/package.nix)
 
 </details>
 <details>
@@ -518,7 +518,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: MIT
-- **Homepage**: https://github.com/wesm/agentsview
+- **Homepage**: https://github.com/kenn-io/agentsview
 - **Usage**: `nix run github:numtide/llm-agents.nix#agentsview -- --help`
 - **Nix**: [packages/agentsview/package.nix](packages/agentsview/package.nix)
 
@@ -571,7 +571,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: MIT
-- **Homepage**: https://github.com/steveyegge/beads
+- **Homepage**: https://github.com/gastownhall/beads
 - **Usage**: `nix run github:numtide/llm-agents.nix#beads -- --help`
 - **Nix**: [packages/beads/package.nix](packages/beads/package.nix)
 
@@ -601,7 +601,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: Apache-2.0
-- **Homepage**: https://github.com/chernistry/bernstein
+- **Homepage**: https://github.com/sipyourdrink-ltd/bernstein
 - **Usage**: `nix run github:numtide/llm-agents.nix#bernstein -- --help`
 - **Nix**: [packages/bernstein/package.nix](packages/bernstein/package.nix)
 
@@ -1097,7 +1097,7 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 
 - **Source**: source
 - **License**: MIT
-- **Homepage**: https://github.com/steipete/mcporter
+- **Homepage**: https://github.com/openclaw/mcporter
 - **Usage**: `nix run github:numtide/llm-agents.nix#mcporter -- --help`
 - **Nix**: [packages/mcporter/package.nix](packages/mcporter/package.nix)
 

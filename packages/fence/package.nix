@@ -19,7 +19,7 @@ buildGoModule rec {
   version = "0.1.60";
 
   src = fetchFromGitHub {
-    owner = "Use-Tusk";
+    owner = "fencesandbox";
     repo = "fence";
     rev = "v${version}";
     hash = "sha256-4yRfU6fCTGOcA9IeFs9Sk9n1PqXi7E++reVDPlCwS1k=";
@@ -74,7 +74,7 @@ buildGoModule rec {
   meta = with lib; {
     description = "Lightweight, container-free sandbox for running commands with network and filesystem restrictions";
     homepage = "https://fencesandbox.com/";
-    changelog = "https://github.com/Use-Tusk/fence/releases";
+    changelog = "https://github.com/fencesandbox/fence/releases";
     license = licenses.asl20;
     sourceProvenance = with sourceTypes; [ fromSource ];
     maintainers = with flake.lib.maintainers; [ uesyn ];
