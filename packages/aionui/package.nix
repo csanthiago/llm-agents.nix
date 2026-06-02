@@ -9,6 +9,7 @@
   electron,
   fetchFromGitHub,
   fetchzip,
+  runCommand,
   makeWrapper,
   glib,
   libsecret,
@@ -33,6 +34,13 @@ let
     yauzl = "3.3.0";
   };
 
+  src = fetchFromGitHub {
+    owner = "iOfficeAI";
+    repo = "AionUi";
+    tag = "v${version}";
+    inherit hash;
+  };
+
   electronHeaders = fetchzip {
     url = "https://www.electronjs.org/headers/v${electron.version}/node-v${electron.version}-headers.tar.gz";
     hash = "sha256-tSDbTN6rJeyYGT2aeLuWmiXdegmdctlr3jVa+vW6r1k=";
@@ -50,12 +58,7 @@ stdenv.mkDerivation {
   pname = "aionui";
   inherit version;
 
-  src = fetchFromGitHub {
-    owner = "iOfficeAI";
-    repo = "AionUi";
-    tag = "v${version}";
-    inherit hash;
-  };
+  inherit src;
 
   nativeBuildInputs = [
     bun2nix.hook
@@ -72,7 +75,21 @@ stdenv.mkDerivation {
   ];
 
   bunDeps = bun2nix.fetchBunDeps {
-    bunNix = ./bun.nix;
+    # bun.nix references workspace packages via relative paths that only
+    # exist in the upstream monorepo, so remap them onto the fetched src.
+    bunNix =
+      { fetchurl, ... }:
+      import ./bun.nix {
+        inherit fetchurl;
+        copyPathToStore =
+          path:
+          let
+            rel = lib.removePrefix (toString ./. + "/") (toString path);
+          in
+          runCommand "aionui-workspace-${baseNameOf rel}" { } ''
+            cp -r ${src}/${rel} $out
+          '';
+      };
   };
 
   dontRunLifecycleScripts = true;
