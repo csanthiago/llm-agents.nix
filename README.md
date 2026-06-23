@@ -892,6 +892,16 @@ Nix packages for AI coding agents and development tools. Automatically updated d
 - **Nix**: [packages/voxterm/package.nix](packages/voxterm/package.nix)
 
 </details>
+<details>
+<summary><strong>voxtype</strong> - Push-to-talk voice-to-text for Wayland</summary>
+
+- **Source**: source
+- **License**: MIT
+- **Homepage**: https://voxtype.io
+- **Usage**: `nix run github:numtide/llm-agents.nix#voxtype -- --help`
+- **Nix**: [packages/voxtype/package.nix](packages/voxtype/package.nix)
+
+</details>
 
 ### Memory & Code Intelligence
 
